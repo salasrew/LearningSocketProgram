@@ -7,7 +7,9 @@ void myfunc() {
 }
 
 int main() {
-    thread t1(myfunc);
+    std::thread t1(myfunc);
     t1.join();
+
+    system("pause");
     return 0;
 }

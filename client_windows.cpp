@@ -1,7 +1,26 @@
 #include <iostream>
 #include <winsock2.h>
+#include <thread>
 
 #pragma comment(lib, "ws2_32.lib")
+
+void receive_messages(SOCKET client_socket)
+{
+    char buffer[1024];
+    while (true)
+    {
+        int byte_received = recv(client_socket, buffer, 1024, 0);
+        if(byte_received <= 0 )
+        {
+            std::cerr << "Failed to receive data from server." << std::endl;
+            break;
+        }
+        buffer[byte_received] = '\0';
+        std::cout << "Server says: " << buffer << std::endl;
+    }
+}
+
+
 
 int main()
 {
@@ -40,22 +59,32 @@ int main()
 
     std::cout << "Connected to server!" << std::endl;
 
-    // 4. 發送訊息給伺服器
-    std::string message = "Hello from client!";
-    send(client_socket, message.c_str(), message.size(), 0);
+    // 4. 使用執行緒接收伺服器消息
+    std::thread(receive_messages, client_socket).detach();
 
-    // 5. 接收伺服器的回應
-    char buffer[1024];
-    int bytes_received = recv(client_socket, buffer, 1024, 0);
-    if(bytes_received == SOCKET_ERROR)
+    // 5. 發送訊息給伺服器
+    // std::string message = "Hello from client!";
+    // send(client_socket, message.c_str(), message.size(), 0);
+    std::string message;
+    while (true)
     {
-        std::cerr << "Failed to receive data from server." << std::endl;
+        std::cout << "Enter a message to send: ";
+        std::getline(std::cin, message);
+        send(client_socket, message.c_str(), message.size(), 0);
     }
-    else
-    {
-        buffer[bytes_received] = '\0';
-        std::cout << "Server says: " << buffer << std::endl;
-    }
+    
+    // // 5. 接收伺服器的回應
+    // char buffer[1024];
+    // int bytes_received = recv(client_socket, buffer, 1024, 0);
+    // if(bytes_received == SOCKET_ERROR)
+    // {
+    //     std::cerr << "Failed to receive data from server." << std::endl;
+    // }
+    // else
+    // {
+    //     buffer[bytes_received] = '\0';
+    //     std::cout << "Server says: " << buffer << std::endl;
+    // }
     
     // 6. 關閉 socket
     closesocket(client_socket);

@@ -1,8 +1,11 @@
 #include <iostream>
 #include <winsock2.h>
-#include <thread>  // 確保你已經包含了這個標頭
+#include <thread> 
+#include <vector>
 
 #pragma comment(lib, "ws2_32.lib")
+
+std::vector<SOCKET> clients;
 
 // 處理客戶端連接的函數
 void handle_client(SOCKET client_socket)
@@ -16,8 +19,18 @@ void handle_client(SOCKET client_socket)
         buffer[bytes_received] = '\0';
         std::cout << "Received: " << buffer << std::endl;
 
-        // 回傳數據給客戶端
-        send(client_socket, buffer, bytes_received, 0);
+        // 迭代所有客戶端並發送訊息
+        for(SOCKET sock: clients)
+        {
+            // 自己不回傳
+            if(sock != client_socket)
+            {
+                send(sock, buffer, bytes_received, 0);
+            }
+        }
+
+        // // 回傳數據給客戶端
+        // send(client_socket, buffer, bytes_received, 0);
     }
     std::cout << "Client disconnected." << std::endl;
     closesocket(client_socket);  // 關閉客戶端socket
@@ -26,6 +39,7 @@ void handle_client(SOCKET client_socket)
 int main()
 {
     int port = 8080;
+
 
     // Windows 環境下初始化 WinSock
     WSADATA wsaData;
@@ -83,6 +97,9 @@ int main()
             continue; // 繼續等待下個連接
         }
 
+
+        // 將客戶端 socket 加入 clients 容器
+        clients.push_back(client_socket);
         std::cout << "Client connected!" << std::endl;
 
         // 使用 thread 創建一個新執行緒來處理該客戶端
